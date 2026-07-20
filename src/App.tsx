@@ -185,10 +185,7 @@ export default function App() {
 
   return (
     <div className="max-w-[920px] mx-auto px-5 pt-10 pb-20">
-      <span className="inline-block text-[11px] font-bold tracking-wide text-navy bg-mint px-2 py-0.5 rounded mb-3.5">
-        RUNS ENTIRELY IN YOUR BROWSER
-      </span>
-      <h1 className="font-extrabold text-[clamp(28px,5vw,42px)] tracking-tight mb-1.5">Post Ready</h1>
+      <h1 className="font-extrabold text-[clamp(28px,5vw,42px)] tracking-tight mb-1.5">Postank</h1>
       <p className="text-paper/60 mb-6 max-w-[52ch] text-[15px]">
         Crop, enhance, and export for the platform you're posting to.{' '}
         <b className="text-mint font-medium">Nothing you upload leaves this page</b> — all processing happens on
