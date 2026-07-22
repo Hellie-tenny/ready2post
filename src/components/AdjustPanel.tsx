@@ -38,7 +38,7 @@ export function AdjustPanel({ adjust, onChange, onAutoEnhance }: Props) {
                 max={max}
                 value={adjust[key]}
                 onChange={(e) => onChange({ ...adjust, [key]: Number(e.target.value) })}
-                className="post-ready-slider"
+                className="postank-slider"
               />
             </div>
           ))}

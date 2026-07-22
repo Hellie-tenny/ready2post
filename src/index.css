@@ -8,7 +8,7 @@ body {
 }
 
 /* Tailwind has no utility for range-input thumbs, so this stays hand-written */
-.post-ready-slider {
+.postank-slider {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
@@ -17,7 +17,7 @@ body {
   background: rgba(255, 255, 255, 0.12);
   outline: none;
 }
-.post-ready-slider::-webkit-slider-thumb {
+.postank-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 15px;
   height: 15px;
@@ -26,7 +26,7 @@ body {
   cursor: pointer;
   border: 2px solid #132a40;
 }
-.post-ready-slider::-moz-range-thumb {
+.postank-slider::-moz-range-thumb {
   width: 15px;
   height: 15px;
   border-radius: 50%;
@@ -34,7 +34,7 @@ body {
   cursor: pointer;
   border: 2px solid #132a40;
 }
-.post-ready-slider::-moz-range-track {
+.postank-slider::-moz-range-track {
   height: 4px;
   border-radius: 2px;
   background: rgba(255, 255, 255, 0.12);

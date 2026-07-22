@@ -1,36 +1,71 @@
-import { GRADIENTS, TextCardState } from '../types';
+import { FONTS, GRADIENTS, TextCardState } from '../types';
 
 function getGradientPreset(key: string) {
   return GRADIENTS.find((g) => g.key === key) ?? GRADIENTS[0];
 }
 
-// wraps text to fit maxWidth, shrinking font size until it fits within maxHeight
-function fitText(
+function getFont(key: string) {
+  return FONTS.find((f) => f.key === key) ?? FONTS[0];
+}
+
+const ACCENT = '#FF7A3D'; // orange, used for *highlighted* words
+
+interface Word {
+  text: string;
+  highlighted: boolean;
+}
+
+// splits "plain *highlighted* plain" into a flat list of words, each tagged
+function tokenize(text: string): Word[] {
+  const words: Word[] = [];
+  const parts = text.split(/(\*[^*]+\*)/g).filter(Boolean);
+  for (const part of parts) {
+    const isHighlight = part.startsWith('*') && part.endsWith('*') && part.length > 1;
+    const clean = isHighlight ? part.slice(1, -1) : part;
+    for (const w of clean.split(/\s+/).filter(Boolean)) {
+      words.push({ text: w, highlighted: isHighlight });
+    }
+  }
+  return words.length ? words : [{ text: ' ', highlighted: false }];
+}
+
+export function fontString(weight: number, size: number, family: string) {
+  return `${weight} ${size}px "${family}"`;
+}
+
+// word-wraps tokenized words to fit maxWidth, shrinking font size until the
+// block fits maxHeight. Returns lines as arrays of words (color preserved per word).
+function fitWords(
   ctx: CanvasRenderingContext2D,
-  text: string,
+  words: Word[],
   maxWidth: number,
   maxHeight: number,
   startSize: number,
   minSize: number,
   weight: number,
-  family = 'Poppins'
-): { lines: string[]; fontSize: number; lineHeight: number } {
+  family: string
+): { lines: Word[][]; fontSize: number; lineHeight: number } {
   let fontSize = startSize;
   while (fontSize >= minSize) {
-    ctx.font = `${weight} ${fontSize}px ${family}`;
-    const words = text.split(/\s+/).filter(Boolean);
-    const lines: string[] = [];
-    let current = '';
+    ctx.font = fontString(weight, fontSize, family);
+    const spaceWidth = ctx.measureText(' ').width;
+    const lines: Word[][] = [];
+    let current: Word[] = [];
+    let currentWidth = 0;
+
     for (const word of words) {
-      const attempt = current ? `${current} ${word}` : word;
-      if (ctx.measureText(attempt).width > maxWidth && current) {
+      const wordWidth = ctx.measureText(word.text).width;
+      const extra = current.length ? spaceWidth + wordWidth : wordWidth;
+      if (currentWidth + extra > maxWidth && current.length) {
         lines.push(current);
-        current = word;
+        current = [word];
+        currentWidth = wordWidth;
       } else {
-        current = attempt;
+        current.push(word);
+        currentWidth += extra;
       }
     }
-    if (current) lines.push(current);
+    if (current.length) lines.push(current);
 
     const lineHeight = fontSize * 1.18;
     const totalHeight = lines.length * lineHeight;
@@ -39,8 +74,7 @@ function fitText(
     }
     fontSize -= 2;
   }
-  // unreachable, satisfies TS
-  return { lines: [text], fontSize: minSize, lineHeight: minSize * 1.18 };
+  return { lines: [words], fontSize: minSize, lineHeight: minSize * 1.18 };
 }
 
 interface RenderArgs {
@@ -48,29 +82,29 @@ interface RenderArgs {
   cw: number;
   ch: number;
   state: TextCardState;
-  bgImage: HTMLImageElement | null;
+  bgImage: HTMLImageElement | null; // null = gradient-only text card; set = photo card
 }
 
 export function renderTextCard({ ctx, cw, ch, state, bgImage }: RenderArgs) {
   const preset = getGradientPreset(state.gradientKey);
+  const font = getFont(state.fontKey);
   const [c1, c2] = preset.stops;
 
   ctx.clearRect(0, 0, cw, ch);
 
-  // when text sits over a photo, the gradient only covers the half nearest
-  // the text (like a news/quote card) — the rest of the photo stays clear.
-  // textZoneTop/Bottom bound where the headline is allowed to lay out.
+  // when there's a background photo, the gradient only covers the half
+  // nearest the text (news-card look) — the rest of the photo stays clear.
   let textZoneTop = 0;
   let textZoneBottom = ch;
 
-  if (state.usePhoto && bgImage) {
+  if (bgImage) {
     const scale = Math.max(cw / bgImage.width, ch / bgImage.height);
     const bw = bgImage.width * scale;
     const bh = bgImage.height * scale;
     ctx.drawImage(bgImage, (cw - bw) / 2, (ch - bh) / 2, bw, bh);
 
-    const bandFrac = 0.58; // portion of the card the gradient band covers
-    const solidAlpha = 'E6'; // ~90% opacity at the anchored edge
+    const bandFrac = 0.58;
+    const solidAlpha = 'E6';
 
     if (state.align === 'top') {
       const bandEnd = ch * bandFrac;
@@ -91,6 +125,19 @@ export function renderTextCard({ ctx, cw, ch, state, bgImage }: RenderArgs) {
       ctx.fillStyle = scrim;
       ctx.fillRect(0, bandStart, cw, ch - bandStart);
     }
+  } else if (preset.fadeToTransparent) {
+    // "transparent" has to resolve to something once flattened to a JPEG —
+    // white is the most neutral, broadly-useful base to fade onto.
+    ctx.fillStyle = '#F4F7F5';
+    ctx.fillRect(0, 0, cw, ch);
+    const fade =
+      state.align === 'top'
+        ? ctx.createLinearGradient(0, 0, 0, ch) // solid at top, fading down
+        : ctx.createLinearGradient(0, ch, 0, 0); // solid at bottom, fading up
+    fade.addColorStop(0, `${c1}FF`);
+    fade.addColorStop(1, `${c2}00`);
+    ctx.fillStyle = fade;
+    ctx.fillRect(0, 0, cw, ch);
   } else {
     const gradient = ctx.createLinearGradient(0, 0, cw, ch);
     gradient.addColorStop(0, c1);
@@ -104,23 +151,25 @@ export function renderTextCard({ ctx, cw, ch, state, bgImage }: RenderArgs) {
   const textColor = preset.textColor === 'light' ? '#F4F7F5' : '#0B1B2B';
 
   ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = textColor;
 
-  // reserve vertical space for tag + byline so the headline auto-fit accounts for them
   const tagHeight = state.tag ? cw * 0.09 : 0;
   const bylineHeight = state.byline ? cw * 0.045 : 0;
   const gap = cw * 0.025;
   const zoneHeight = textZoneBottom - textZoneTop;
   const availableForHeadline = zoneHeight - padding * 2 - tagHeight - bylineHeight - gap * 2;
 
-  const { lines, fontSize, lineHeight } = fitText(
+  const rawHeadline = state.headline || ' ';
+  const words = tokenize(font.uppercase ? rawHeadline.toUpperCase() : rawHeadline);
+
+  const { lines, fontSize, lineHeight } = fitWords(
     ctx,
-    state.headline || ' ',
+    words,
     maxWidth,
     Math.max(availableForHeadline, cw * 0.12),
     cw * 0.11,
     cw * 0.03,
-    800
+    font.weight,
+    font.family
   );
 
   const blockHeight = tagHeight + (state.tag ? gap : 0) + lines.length * lineHeight + (state.byline ? gap + bylineHeight : 0);
@@ -134,7 +183,7 @@ export function renderTextCard({ ctx, cw, ch, state, bgImage }: RenderArgs) {
 
   // tag / badge
   if (state.tag) {
-    ctx.font = `700 ${cw * 0.032}px Poppins`;
+    ctx.font = fontString(700, cw * 0.032, 'Poppins');
     const tagText = state.tag.toUpperCase();
     const tagMetrics = ctx.measureText(tagText);
     const tagPadX = cw * 0.025;
@@ -149,27 +198,33 @@ export function renderTextCard({ ctx, cw, ch, state, bgImage }: RenderArgs) {
     cursorY += tagHeight + gap;
   }
 
-  // headline
-  ctx.font = `800 ${fontSize}px Poppins`;
-  ctx.fillStyle = textColor;
+  // headline — draw word by word so *highlighted* words can use the accent color
+  ctx.font = fontString(font.weight, fontSize, font.family);
   ctx.textAlign = 'left';
+  const spaceWidth = ctx.measureText(' ').width;
   for (const line of lines) {
     cursorY += lineHeight * 0.82;
-    ctx.fillText(line, padding, cursorY);
+    let x = padding;
+    for (const word of line) {
+      ctx.fillStyle = word.highlighted ? ACCENT : textColor;
+      ctx.fillText(word.text, x, cursorY);
+      x += ctx.measureText(word.text).width + spaceWidth;
+    }
     cursorY += lineHeight * 0.18;
   }
 
   // byline
   if (state.byline) {
     cursorY += gap;
-    ctx.font = `500 ${cw * 0.032}px Poppins`;
+    ctx.font = fontString(500, cw * 0.032, 'Poppins');
+    ctx.fillStyle = textColor;
     ctx.globalAlpha = 0.75;
     ctx.fillText(state.byline, padding, cursorY + bylineHeight * 0.6);
     ctx.globalAlpha = 1;
   }
 }
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+export function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.arcTo(x + w, y, x + w, y + h, r);

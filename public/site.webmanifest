@@ -1,0 +1,13 @@
+{
+  "name": "Postank",
+  "short_name": "Postank",
+  "description": "Free, in-browser photo prep and post design — crop, enhance, remove backgrounds, and build text/gradient cards for social media, with no server and no per-photo cost.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B1B2B",
+  "theme_color": "#0B1B2B",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

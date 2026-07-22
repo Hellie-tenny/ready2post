@@ -1,11 +1,8 @@
-import { useRef } from 'react';
-import { GRADIENTS, TextAlign, TextCardState } from '../types';
+import { FONTS, GRADIENTS, TextAlign, TextCardState } from '../types';
 
 interface Props {
   state: TextCardState;
   onChange: (s: TextCardState) => void;
-  onPhotoFile: (file: File) => void;
-  hasPhoto: boolean;
 }
 
 const ALIGNS: { key: TextAlign; label: string }[] = [
@@ -14,9 +11,7 @@ const ALIGNS: { key: TextAlign; label: string }[] = [
   { key: 'bottom', label: 'Bottom' },
 ];
 
-export function TextCardPanel({ state, onChange, onPhotoFile, hasPhoto }: Props) {
-  const fileRef = useRef<HTMLInputElement>(null);
-
+export function TextCardPanel({ state, onChange }: Props) {
   function set<K extends keyof TextCardState>(key: K, value: TextCardState[K]) {
     onChange({ ...state, [key]: value });
   }
@@ -43,6 +38,9 @@ export function TextCardPanel({ state, onChange, onPhotoFile, hasPhoto }: Props)
           rows={3}
           className="w-full rounded-lg bg-navy border border-white/10 px-3 py-2 text-sm outline-none focus:border-mint/50 resize-none"
         />
+        <p className="text-[11px] text-paper/35 mt-1">
+          Wrap a word in *asterisks* to highlight it in accent color — e.g. "Prices *drop* today"
+        </p>
       </div>
 
       <div>
@@ -57,6 +55,26 @@ export function TextCardPanel({ state, onChange, onPhotoFile, hasPhoto }: Props)
       </div>
 
       <div>
+        <h2 className="text-sm font-bold uppercase tracking-wide text-paper/50 mb-2">Font</h2>
+        <div className="flex flex-wrap gap-1.5">
+          {FONTS.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => set('fontKey', f.key)}
+              style={{ fontFamily: f.family }}
+              className={`rounded-lg border px-3 py-1.5 text-sm ${
+                state.fontKey === f.key
+                  ? 'bg-mint text-navy border-mint font-bold'
+                  : 'border-white/10 text-paper/70 hover:border-mint/50'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
         <h2 className="text-sm font-bold uppercase tracking-wide text-paper/50 mb-2">Gradient</h2>
         <div className="flex flex-wrap gap-2">
           {GRADIENTS.map((g) => (
@@ -67,7 +85,11 @@ export function TextCardPanel({ state, onChange, onPhotoFile, hasPhoto }: Props)
               className={`w-9 h-9 rounded-full border-2 transition-transform ${
                 state.gradientKey === g.key ? 'border-mint scale-110' : 'border-transparent'
               }`}
-              style={{ background: `linear-gradient(135deg, ${g.stops[0]}, ${g.stops[1]})` }}
+              style={{
+                background: g.fadeToTransparent
+                  ? `linear-gradient(135deg, ${g.stops[0]}, transparent), repeating-conic-gradient(#0E2033 0% 25%, #0A1826 0% 50%) 50%/6px 6px`
+                  : `linear-gradient(135deg, ${g.stops[0]}, ${g.stops[1]})`,
+              }}
             />
           ))}
         </div>
@@ -90,35 +112,6 @@ export function TextCardPanel({ state, onChange, onPhotoFile, hasPhoto }: Props)
             </button>
           ))}
         </div>
-      </div>
-
-      <div>
-        <h2 className="text-sm font-bold uppercase tracking-wide text-paper/50 mb-2">Background</h2>
-        <div className="flex flex-wrap gap-1.5">
-          <button
-            onClick={() => set('usePhoto', false)}
-            className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${
-              !state.usePhoto ? 'bg-mint text-navy border-mint font-bold' : 'border-white/10 text-paper/65'
-            }`}
-          >
-            Gradient only
-          </button>
-          <button
-            onClick={() => (hasPhoto ? set('usePhoto', true) : fileRef.current?.click())}
-            className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${
-              state.usePhoto ? 'bg-mint text-navy border-mint font-bold' : 'border-white/10 text-paper/65'
-            }`}
-          >
-            {hasPhoto ? 'Photo + gradient' : 'Add a photo…'}
-          </button>
-        </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => { if (e.target.files?.[0]) onPhotoFile(e.target.files[0]); }}
-        />
       </div>
     </div>
   );
