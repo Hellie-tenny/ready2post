@@ -481,6 +481,14 @@ export default function App() {
           )}
         </>
       )}
+
+      <footer className="mt-16 pt-6 border-t border-white/[0.08] flex flex-wrap gap-x-5 gap-y-2 text-xs text-paper/35">
+        <span>© {new Date().getFullYear()} Postank</span>
+        <a href="/about.html" className="hover:text-mint">About</a>
+        <a href="/privacy-policy.html" className="hover:text-mint">Privacy</a>
+        <a href="/terms.html" className="hover:text-mint">Terms</a>
+        <a href="/contact.html" className="hover:text-mint">Contact</a>
+      </footer>
     </div>
   );
 }
