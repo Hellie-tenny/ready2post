@@ -34,6 +34,11 @@ export const BG_COLORS: Record<string, string> = {
   mint: '#5FE3B3',
 };
 
+// Display labels for color-swatch keys — capitalizes so "Selected: X" captions read naturally.
+export function colorLabel(key: string): string {
+  return key.charAt(0).toUpperCase() + key.slice(1);
+}
+
 export interface Pan {
   x: number;
   y: number;
@@ -43,10 +48,21 @@ export type AppMode = 'photo' | 'collage' | 'text-card' | 'photo-card' | 'produc
 
 export type FeatureGroup = 'photos' | 'cards';
 
+export interface ModeDef {
+  key: AppMode;
+  label: string;
+  icon: string;
+  // Shown under the mode pills, and doubles as the empty-state explanation.
+  blurb: string;
+  // Only relevant for modes that start with a photo upload — what the dropzone says
+  // beyond the generic "drop a photo here" instruction.
+  dropzoneHint?: string;
+}
+
 export interface FeatureGroupDef {
   key: FeatureGroup;
   label: string;
-  modes: { key: AppMode; label: string }[];
+  modes: ModeDef[];
 }
 
 // Grouped by what the tools have in common: "Photos" work with your raw photo(s),
@@ -56,23 +72,59 @@ export const FEATURE_GROUPS: FeatureGroupDef[] = [
     key: 'photos',
     label: 'Photos',
     modes: [
-      { key: 'photo', label: 'Enhance a photo' },
-      { key: 'collage', label: 'Collage' },
+      {
+        key: 'photo',
+        label: 'Enhance a photo',
+        icon: '🖼️',
+        blurb: 'Crop to size, fix lighting, and optionally swap the background of a single photo.',
+        dropzoneHint: "You'll be able to crop it, adjust brightness/contrast, and change the background next.",
+      },
+      {
+        key: 'collage',
+        label: 'Collage',
+        icon: '🧩',
+        blurb: 'Combine 2–6 photos into one grid layout, ready to post as a single image.',
+      },
     ],
   },
   {
     key: 'cards',
     label: 'Cards',
     modes: [
-      { key: 'text-card', label: 'Text card' },
-      { key: 'photo-card', label: 'Photo + gradient card' },
-      { key: 'product-post', label: 'Product post' },
+      {
+        key: 'text-card',
+        label: 'Text card',
+        icon: '💬',
+        blurb: 'A bold headline on a gradient background — no photo needed. Good for quotes or announcements.',
+      },
+      {
+        key: 'photo-card',
+        label: 'Photo + gradient card',
+        icon: '🗞️',
+        blurb: 'Your photo with a headline faded in over part of it — the classic "news post" look.',
+        dropzoneHint: "You'll add a headline over it next, like a news post.",
+      },
+      {
+        key: 'product-post',
+        label: 'Product post',
+        icon: '🏷️',
+        blurb: 'A product photo with a price sticker and details — for selling on social media.',
+        dropzoneHint: "You'll add a name, price sticker, and details next.",
+      },
     ],
   },
 ];
 
 export function groupOfMode(mode: AppMode): FeatureGroup {
   return FEATURE_GROUPS.find((g) => g.modes.some((m) => m.key === mode))!.key;
+}
+
+export function modeInfo(mode: AppMode): ModeDef {
+  for (const g of FEATURE_GROUPS) {
+    const found = g.modes.find((m) => m.key === mode);
+    if (found) return found;
+  }
+  throw new Error(`Unknown mode: ${mode}`);
 }
 
 export interface GradientPreset {
@@ -92,6 +144,10 @@ export const GRADIENTS: GradientPreset[] = [
   { key: 'noir', label: 'Black fade', stops: ['#000000', '#000000'], textColor: 'light', fadeToTransparent: true },
 ];
 
+export function gradientLabel(key: string): string {
+  return GRADIENTS.find((g) => g.key === key)?.label ?? key;
+}
+
 export type TextAlign = 'top' | 'center' | 'bottom';
 
 export interface FontChoice {
@@ -108,6 +164,10 @@ export const FONTS: FontChoice[] = [
   { key: 'bebas', label: 'Bebas', family: 'Bebas Neue', weight: 400, uppercase: true },
   { key: 'grotesk', label: 'Grotesk', family: 'Space Grotesk', weight: 700 },
 ];
+
+export function fontLabel(key: string): string {
+  return FONTS.find((f) => f.key === key)?.label ?? key;
+}
 
 export interface TextCardState {
   tag: string;

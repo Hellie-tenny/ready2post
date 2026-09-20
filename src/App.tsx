@@ -27,6 +27,7 @@ import {
   DEFAULT_TEXT_CARD,
   FEATURE_GROUPS,
   groupOfMode,
+  modeInfo,
   Pan,
   Preset,
   PRESETS,
@@ -116,6 +117,16 @@ export default function App() {
     const image = await loadImage(file);
     setImg(image);
     setPreset(PRESETS[0]);
+    setPan({ x: 0.5, y: 0.5 });
+    setAdjust(DEFAULT_ADJUSTMENTS);
+    setBgMode('none');
+    setCutoutCanvas(null);
+    setCustomBgImg(null);
+    setBgStatus('');
+  }, []);
+
+  const handlePhotoReset = useCallback(() => {
+    setImg(null);
     setPan({ x: 0.5, y: 0.5 });
     setAdjust(DEFAULT_ADJUSTMENTS);
     setBgMode('none');
@@ -304,7 +315,7 @@ export default function App() {
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-3">
         {FEATURE_GROUPS.find((g) => g.key === groupOfMode(mode))!.modes.map((m) => (
           <button
             key={m.key}
@@ -313,19 +324,33 @@ export default function App() {
               mode === m.key ? 'bg-mint text-navy border-mint' : 'border-white/10 text-paper/60 hover:border-mint/50'
             }`}
           >
+            <span className="mr-1.5">{m.icon}</span>
             {m.label}
           </button>
         ))}
       </div>
 
+      <p className="flex items-start gap-2 text-[13px] text-paper/45 mb-6 max-w-[52ch]">
+        <span>{modeInfo(mode).icon}</span>
+        <span>{modeInfo(mode).blurb}</span>
+      </p>
+
       {mode === 'photo' && (
         <>
-          {!img && <Dropzone onFile={handleFile} />}
+          {!img && <Dropzone onFile={handleFile} hint={modeInfo('photo').dropzoneHint} />}
 
           {img && (
             <div className="grid grid-cols-1 md:grid-cols-[1.3fr_1fr] gap-6">
               <div className="bg-navy-soft rounded-2xl p-5 border border-white/[0.08]">
-                <PresetPicker current={preset} onChange={(p) => { setPreset(p); setPan({ x: 0.5, y: 0.5 }); }} />
+                <div className="flex items-center justify-between mb-4">
+                  <PresetPicker current={preset} onChange={(p) => { setPreset(p); setPan({ x: 0.5, y: 0.5 }); }} />
+                  <button
+                    onClick={handlePhotoReset}
+                    className="text-xs text-paper/40 underline whitespace-nowrap ml-3"
+                  >
+                    Use a different photo
+                  </button>
+                </div>
                 <CanvasStage
                   img={img}
                   preset={preset}
@@ -339,9 +364,10 @@ export default function App() {
               </div>
 
               <div className="bg-navy-soft rounded-2xl p-[22px] border border-white/[0.08] flex flex-col gap-[18px]">
-                <AdjustPanel adjust={adjust} onChange={setAdjust} onAutoEnhance={handleAutoEnhance} />
+                <AdjustPanel step={1} adjust={adjust} onChange={setAdjust} onAutoEnhance={handleAutoEnhance} />
 
                 <BackgroundPanel
+                  step={2}
                   bgMode={bgMode}
                   onModeChange={handleBgModeChange}
                   onCustomImage={handleCustomImage}
@@ -352,7 +378,7 @@ export default function App() {
                 />
 
                 {CAPTION_WORKER_URL && (
-                  <CaptionPanel getFullResBlob={getFullResBlob} workerUrl={CAPTION_WORKER_URL} />
+                  <CaptionPanel step={3} getFullResBlob={getFullResBlob} workerUrl={CAPTION_WORKER_URL} />
                 )}
 
                 <button
@@ -416,7 +442,7 @@ export default function App() {
 
       {mode === 'photo-card' && (
         <>
-          {!photoCardBgImg && <Dropzone onFile={handlePhotoCardFile} />}
+          {!photoCardBgImg && <Dropzone onFile={handlePhotoCardFile} hint={modeInfo('photo-card').dropzoneHint} />}
 
           {photoCardBgImg && (
             <div className="grid grid-cols-1 md:grid-cols-[1.3fr_1fr] gap-6">
@@ -450,7 +476,7 @@ export default function App() {
 
       {mode === 'product-post' && (
         <>
-          {!productPhoto && <Dropzone onFile={handleProductFile} />}
+          {!productPhoto && <Dropzone onFile={handleProductFile} hint={modeInfo('product-post').dropzoneHint} />}
 
           {productPhoto && (
             <div className="grid grid-cols-1 md:grid-cols-[1.3fr_1fr] gap-6">

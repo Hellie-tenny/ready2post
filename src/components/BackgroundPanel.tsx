@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { BackgroundMode } from '../types';
+import { Section } from './Section';
 
 interface Props {
   bgMode: BackgroundMode;
@@ -9,6 +10,7 @@ interface Props {
   onInvertChange: (v: boolean) => void;
   status: string; // '' | 'loading model' | 'analyzing'
   disabled: boolean;
+  step?: number;
 }
 
 const OPTIONS: { key: BackgroundMode; label: string }[] = [
@@ -28,14 +30,12 @@ export function BackgroundPanel({
   onInvertChange,
   status,
   disabled,
+  step,
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div>
-      <h2 className="text-sm font-bold uppercase tracking-wide text-paper/50 mb-3">
-        Background <span className="normal-case tracking-normal font-normal text-paper/35">{status}</span>
-      </h2>
+    <Section step={step} title="Background" suffix={status || undefined}>
       <div className="flex flex-wrap gap-1.5">
         {OPTIONS.map((opt) => (
           <button
@@ -66,6 +66,6 @@ export function BackgroundPanel({
         />
         Subject and background look swapped
       </label>
-    </div>
+    </Section>
   );
 }

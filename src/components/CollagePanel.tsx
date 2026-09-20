@@ -1,5 +1,7 @@
 import { useRef } from 'react';
-import { BG_COLORS, COLLAGE_LAYOUTS, CollageState } from '../types';
+import { BG_COLORS, COLLAGE_LAYOUTS, CollageState, colorLabel } from '../types';
+import { Section } from './Section';
+import { SwatchPicker } from './SwatchPicker';
 
 interface Props {
   photos: HTMLImageElement[];
@@ -18,12 +20,15 @@ export function CollagePanel({ photos, onAddFiles, onRemovePhoto, state, onChang
     onChange({ ...state, [key]: value });
   }
 
+  const gapColorItems = GAP_COLOR_KEYS.map((key) => ({
+    key,
+    label: colorLabel(key),
+    style: { background: BG_COLORS[key] },
+  }));
+
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-sm font-bold uppercase tracking-wide text-paper/50 mb-2">
-          Photos <span className="normal-case tracking-normal font-normal text-paper/35">({photos.length})</span>
-        </h2>
+    <>
+      <Section step={1} title="Photos" suffix={`(${photos.length})`} hint="Add 2–6 photos — the layout below uses your first N of them.">
         <div className="flex flex-wrap gap-2">
           {photos.map((photo, i) => (
             <div key={i} className="relative w-14 h-14 rounded-md overflow-hidden border border-white/10">
@@ -54,62 +59,52 @@ export function CollagePanel({ photos, onAddFiles, onRemovePhoto, state, onChang
             e.target.value = '';
           }}
         />
-      </div>
+      </Section>
 
-      <div>
-        <h2 className="text-sm font-bold uppercase tracking-wide text-paper/50 mb-2">Layout</h2>
-        <div className="flex flex-wrap gap-1.5">
-          {COLLAGE_LAYOUTS.map((l) => {
-            const disabled = photos.length < l.slots;
-            return (
-              <button
-                key={l.key}
-                disabled={disabled}
-                onClick={() => set('layoutKey', l.key)}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-30 disabled:cursor-not-allowed ${
-                  state.layoutKey === l.key
-                    ? 'bg-mint text-navy border-mint font-bold'
-                    : 'border-white/10 text-paper/65 hover:border-mint/50'
-                }`}
-              >
-                {l.label}
-              </button>
-            );
-          })}
+      <Section step={2} title="Layout & style">
+        <div>
+          <p className="text-xs font-semibold text-paper/60 mb-1.5">Layout</p>
+          <div className="flex flex-wrap gap-1.5">
+            {COLLAGE_LAYOUTS.map((l) => {
+              const disabled = photos.length < l.slots;
+              return (
+                <button
+                  key={l.key}
+                  disabled={disabled}
+                  onClick={() => set('layoutKey', l.key)}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-30 disabled:cursor-not-allowed ${
+                    state.layoutKey === l.key
+                      ? 'bg-mint text-navy border-mint font-bold'
+                      : 'border-white/10 text-paper/65 hover:border-mint/50'
+                  }`}
+                >
+                  {l.label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[11px] text-paper/35 mt-1.5">
+            Layouts needing more photos than you've added are grayed out — add more above to unlock them.
+          </p>
         </div>
-        <p className="text-[11px] text-paper/35 mt-1.5">
-          Uses your first N photos for whichever layout you pick — add more above to unlock bigger layouts.
-        </p>
-      </div>
 
-      <div>
-        <h2 className="text-sm font-bold uppercase tracking-wide text-paper/50 mb-2">Gap size</h2>
-        <input
-          type="range"
-          min={0}
-          max={4}
-          value={state.gapSize}
-          onChange={(e) => set('gapSize', Number(e.target.value))}
-          className="postank-slider"
-        />
-      </div>
-
-      <div>
-        <h2 className="text-sm font-bold uppercase tracking-wide text-paper/50 mb-2">Gap color</h2>
-        <div className="flex gap-1.5">
-          {GAP_COLOR_KEYS.map((key) => (
-            <button
-              key={key}
-              onClick={() => set('gapColorKey', key)}
-              title={key}
-              className={`w-8 h-8 rounded-full border-2 ${
-                state.gapColorKey === key ? 'border-mint scale-110' : 'border-white/15'
-              }`}
-              style={{ background: BG_COLORS[key] }}
-            />
-          ))}
+        <div>
+          <p className="text-xs font-semibold text-paper/60 mb-1.5">Gap size</p>
+          <input
+            type="range"
+            min={0}
+            max={4}
+            value={state.gapSize}
+            onChange={(e) => set('gapSize', Number(e.target.value))}
+            className="postank-slider"
+          />
         </div>
-      </div>
-    </div>
+
+        <div>
+          <p className="text-xs font-semibold text-paper/60 mb-1.5">Gap color</p>
+          <SwatchPicker items={gapColorItems} selectedKey={state.gapColorKey} onChange={(k) => set('gapColorKey', k as keyof typeof BG_COLORS)} size={32} />
+        </div>
+      </Section>
+    </>
   );
 }

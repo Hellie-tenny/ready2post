@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { Section } from './Section';
 
 interface Props {
   getFullResBlob: () => Promise<Blob>;
   workerUrl: string;
+  step?: number;
 }
 
 function blobToBase64(blob: Blob): Promise<string> {
@@ -17,7 +19,7 @@ function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
-export function CaptionPanel({ getFullResBlob, workerUrl }: Props) {
+export function CaptionPanel({ getFullResBlob, workerUrl, step }: Props) {
   const [captions, setCaptions] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,12 +57,7 @@ export function CaptionPanel({ getFullResBlob, workerUrl }: Props) {
   }
 
   return (
-    <div>
-      <h2 className="text-sm font-bold uppercase tracking-wide text-paper/50 mb-2">Captions</h2>
-      <p className="text-xs text-paper/40 mb-3 leading-relaxed">
-        Unlike everything else here, this sends your photo to Google's Gemini to generate suggestions —
-        it's the one feature that leaves your device.
-      </p>
+    <Section step={step} title="Captions" hint="Unlike everything else here, this sends your photo to Google's Gemini to generate suggestions — it's the one feature that leaves your device.">
       <button
         onClick={handleSuggest}
         disabled={loading}
@@ -87,6 +84,6 @@ export function CaptionPanel({ getFullResBlob, workerUrl }: Props) {
           ))}
         </div>
       )}
-    </div>
+    </Section>
   );
 }
